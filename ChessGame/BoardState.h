@@ -161,15 +161,10 @@ public:
 		return m_board[loc.Raw()];
 	}
 
-	/*
-	bool Move(const char* from, const char* to)
+	static int Sign(int x)
 	{
-		return Move(
-			from[0] - 'a', 
-			7 - (from[1] - '1'),
-			to[0] - 'a',
-			7 - (to[1] - '1'));
-	}*/
+		return (0 < x) - (x < 0);
+	}
 
 	bool CanMove(BoardLocation from, BoardLocation to) const
 	{
@@ -182,13 +177,32 @@ public:
 		if (toPiece.Type != PieceType::Empty && toPiece.Side == fromPiece.Side) return false;
 
 		if (fromPiece.Type == PieceType::Pawn)
-		{
-			
-			if (m_nextModeSide == SideType::White)
-			{
-				if (from.Y() >= to.Y()) return false;
+		{			
+			int direction = (m_nextModeSide == SideType::White) ? -1 : 1;
+			int startRow = (m_nextModeSide == SideType::White) ? 6 : 1;
 
-				if (from.Y() - to.Y() > 2) return false;
+			// Move correct direction
+			if (Sign(to.Y() - from.Y()) != direction) return false;
+
+			int distance = abs(from.Y() - to.Y());
+
+			// Max 2 squares
+			if (distance > 2) return false;
+
+			// 2 squares only ok from start position
+			if (distance == 2 && from.Y() != startRow) return false;
+
+			// Capture
+			if (from.X() != to.X())
+			{
+				// Must be one square left or right
+				if (abs(from.X() - to.X()) != 1) return false;
+
+				// Must be one square in correct direction
+				if (distance != 1) return false;
+
+				// Must capture
+				if (toPiece.Type == PieceType::Empty) return false;
 			}
 		}
 
@@ -204,6 +218,8 @@ public:
 
 		Set(to, Get(from));
 		Set(from, Piece(PieceType::Empty, SideType::White));
+
+		this->m_nextModeSide = m_nextModeSide == SideType::White ? SideType::Black : SideType::White;
 
 		return true;
 	}

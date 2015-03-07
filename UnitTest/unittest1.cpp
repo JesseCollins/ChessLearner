@@ -67,7 +67,7 @@ namespace UnitTest
 		}
 
 
-		TEST_METHOD(BasicMoves)
+		TEST_METHOD(PawnMoves)
 		{		
 			BoardState b;
 
@@ -76,11 +76,21 @@ namespace UnitTest
 
 			Assert::IsFalse(b.CanMove("e7", "e5"));
 			Assert::IsFalse(b.CanMove("f7", "f5"));
-
-			Assert::IsTrue(b.Move("e2", "e4"));
-			Assert::AreEqual(Piece(PieceType::Pawn, SideType::White), b.Get("e4"));
+			Assert::IsFalse(b.CanMove("g7", "g6"));
 
 			Assert::IsFalse(b.CanMove("f2", "f5"), L"Pawn can't move 3 squares");
+			Assert::IsTrue(b.CanMove("a2", "a4"));
+			Assert::IsTrue(b.CanMove("b2", "b3"));
+
+			Assert::IsTrue(b.Move("e2", "e4"), L"King pawn open");
+			Assert::AreEqual(Piece(PieceType::Pawn, SideType::White), b.Get("e4"));
+
+			// black move
+
+			Assert::IsTrue(b.Move("e7", "e5"));
+
+			Assert::IsTrue(b.Move("d2", "d4"));
+			Assert::IsTrue(b.Move("e5", "d4"));
 		}
 
 	};
