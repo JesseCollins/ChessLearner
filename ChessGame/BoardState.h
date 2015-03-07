@@ -186,9 +186,9 @@ public:
 			
 			if (m_nextModeSide == SideType::White)
 			{
-				if (from.Y >= to.Y) return false;
+				if (from.Y() >= to.Y()) return false;
 
-				if (from.Y - to.Y > 2) return false;
+				if (from.Y() - to.Y() > 2) return false;
 			}
 		}
 
