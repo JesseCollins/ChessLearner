@@ -1,6 +1,8 @@
 
 
 *.sdf
+*.opensdf
 
-*\Debug\*
-*\ipch\*
+/ChessGame/Debug/*
+/ChessGame/ipch/*
+/UnitTest/Debug/*
