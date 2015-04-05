@@ -2,7 +2,11 @@
 
 *.sdf
 *.opensdf
+*.obj
+*.pdb
+*.suo
 
 /ChessGame/Debug/*
+/ChessGame/Release/*
 /ChessGame/ipch/*
 /UnitTest/Debug/*

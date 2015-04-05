@@ -1,7 +1,11 @@
 
 #include <assert.h>
 
-enum class PieceType : unsigned char
+#pragma once
+
+typedef unsigned char byte;
+
+enum class PieceType : byte
 {
 	Empty,
 	Pawn,
@@ -9,7 +13,8 @@ enum class PieceType : unsigned char
 	Knight,
 	Rook,
 	Queen,
-	King
+	King,
+	Invalid
 };
 
 const char PieceTypeChars[] =
@@ -23,11 +28,13 @@ const char PieceTypeChars[] =
 	'K'
 };
 
-enum class SideType : unsigned char
+enum class SideType : byte
 {
 	White,
 	Black
 };
+
+int GetHomeRow(SideType side);
 
 struct Piece
 {
@@ -38,6 +45,12 @@ struct Piece
 	Piece(PieceType p, SideType s)
 		: Type(p)
 		, Side(s) {}
+
+	Piece(byte b)
+	{
+		RawValue = b;
+		assert(Type < PieceType::Invalid);
+	}
 
 	bool operator==(const Piece& other) const
 	{
@@ -60,8 +73,21 @@ struct Piece
 			return static_cast<char>(::tolower(GetChar()));
 	}
 
-	PieceType		Type : 7;
-	SideType		Side : 1;
+	SideType GetSide() const
+	{
+		return Side;
+	}
+
+	union
+	{
+		struct
+		{
+			PieceType		Type : 3;
+			SideType		Side : 1;
+		};
+		byte RawValue;
+	};
+
 };
 
 class BoardLocation
@@ -79,7 +105,17 @@ public:
 		Init(str[0] - 'a', 7 - (str[1] - '1'));
 	}
 
-	unsigned char Raw() const
+	BoardLocation(const BoardLocation& other)
+	{
+		m_sq = other.m_sq;
+	}
+
+	BoardLocation(byte raw)
+	{
+		m_sq = raw;
+	}
+
+	byte Raw() const
 	{
 		return m_sq;
 	}
@@ -94,27 +130,39 @@ public:
 		return m_sq / 8;
 	}
 
+	bool operator==(const BoardLocation& other)
+	{
+		return m_sq == other.m_sq;
+	}
+
+	bool operator!=(const BoardLocation& other)
+	{
+		return !(*this == other);
+	}
+
 private:
 	void Init(int x, int y)
 	{
 		auto val = x + y * 8;
-		assert(val >= 0 && val < 64);
-		m_sq = static_cast<unsigned char>(val);
+		assert(val >= 0 && val <= 64); // 64 is valid for end()
+		m_sq = static_cast<byte>(val);
 	}
 
-	unsigned char m_sq;
+	byte m_sq;
 };
+
+extern const BoardLocation InvalidBoardLocation;
 
 class BoardState
 {
 public:
 
 	BoardState()
-		: m_nextModeSide(SideType::White)
+		: m_nextMoveSide(SideType::White)
 	{
 		static_assert(static_cast<int>(PieceType::King) < (1 << 3), "Ensure PieceType can fit in 3 bits");
 
-		memset(m_board, sizeof(m_board), 0);
+		memset(m_board, 0, sizeof(m_board));
 
 		for (int i = 0; i < 8; ++i)
 		{
@@ -153,12 +201,19 @@ public:
 
 	Piece Get(int col, int row) const
 	{
-		return m_board[col + row * 8];
+		return Get(col + row * 8);
 	}
 
 	Piece Get(BoardLocation loc) const
 	{
-		return m_board[loc.Raw()];
+		return Get(loc.Raw());
+	}
+
+	Piece Get(byte rawLocation) const
+	{
+		const auto adjustment = (rawLocation % 2) * 4;
+		const byte value = (m_board[rawLocation / 2] >> adjustment) & 0xf;
+		return Piece(value);
 	}
 
 	static int Sign(int x)
@@ -166,31 +221,54 @@ public:
 		return (0 < x) - (x < 0);
 	}
 
+	bool IsObstructed(BoardLocation from, BoardLocation to) const
+	{
+		int dx = Sign(to.X() - from.X());
+		int dy = Sign(to.Y() - from.Y());
+
+		for (
+			auto it = BoardLocation(from.X() + dx, from.Y() + dy);
+			it != to;
+			it = BoardLocation(it.X() + dx, it.Y() + dy))
+		{
+			if (Get(it).Type != PieceType::Empty)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool CanMove(BoardLocation from, BoardLocation to) const
 	{
 		auto fromPiece = Get(from);
 		auto toPiece = Get(to);
 
+		// There's no piece there
 		if (fromPiece.Type == PieceType::Empty) return false;
-		if (fromPiece.Side != m_nextModeSide) return false;
 
+		// It's not your turn
+		if (fromPiece.Side != m_nextMoveSide) return false;
+
+		// Can't capture own piece (also covers moving to same square)
 		if (toPiece.Type != PieceType::Empty && toPiece.Side == fromPiece.Side) return false;
+
+		const int xdist = abs(to.X() - from.X());
+		const int ydist = abs(to.Y() - from.Y());
 
 		if (fromPiece.Type == PieceType::Pawn)
 		{			
-			int direction = (m_nextModeSide == SideType::White) ? -1 : 1;
-			int startRow = (m_nextModeSide == SideType::White) ? 6 : 1;
+			int direction = (m_nextMoveSide == SideType::White) ? -1 : 1;
+			int startRow = (m_nextMoveSide == SideType::White) ? 6 : 1;
 
 			// Move correct direction
 			if (Sign(to.Y() - from.Y()) != direction) return false;
 
-			int distance = abs(from.Y() - to.Y());
-
 			// Max 2 squares
-			if (distance > 2) return false;
+			if (ydist > 2) return false;
 
 			// 2 squares only ok from start position
-			if (distance == 2 && from.Y() != startRow) return false;
+			if (ydist == 2 && from.Y() != startRow) return false;
 
 			// Capture
 			if (from.X() != to.X())
@@ -199,13 +277,52 @@ public:
 				if (abs(from.X() - to.X()) != 1) return false;
 
 				// Must be one square in correct direction
-				if (distance != 1) return false;
+				if (ydist != 1) return false;
 
 				// Must capture
 				if (toPiece.Type == PieceType::Empty) return false;
 			}
 		}
-
+		else if (fromPiece.Type == PieceType::Bishop)
+		{
+			if (xdist != ydist) return false;
+			if (IsObstructed(from, to)) return false;
+		}
+		else if (fromPiece.Type == PieceType::Knight)
+		{
+			if (xdist + ydist != 3) return false;
+			if (xdist == 0 || ydist == 0) return false;
+		}
+		else if (fromPiece.Type == PieceType::Rook)
+		{
+			if (xdist != 0 && ydist != 0) return false;
+			if (IsObstructed(from, to)) return false;
+		}
+		else if (fromPiece.Type == PieceType::Queen)
+		{
+			const bool movingLikeRook = xdist == 0 || ydist == 0;
+			const bool movingLikeBishop = xdist == ydist;
+			if (!movingLikeBishop && !movingLikeRook) return false;
+			if (IsObstructed(from, to)) return false;
+		}
+		else if (fromPiece.Type == PieceType::King)
+		{
+			// castling!  hacky, should this be done differently?
+			if (ydist == 0 && from.X() == 4 && (to.X() == 2 || to.X() == 6))
+			{
+				// TODO: handle all the fancy cases.
+				return true;
+			}
+			else
+			{
+				if (xdist > 1 || ydist > 1) return false;
+			}
+		}
+		else
+		{
+			assert(false);
+			return false;
+		}
 		return true;
 	}
 
@@ -215,26 +332,115 @@ public:
 		{
 			return false;
 		}
+		
+		if (Get(from).Type == PieceType::King)
+		{
+			if (from.X() + 2 == to.X())
+			{
+				MovePiece(BoardLocation(7, from.Y()), BoardLocation(5, from.Y()));
+			}
+			if (from.X() - 2 == to.X())
+			{
+				MovePiece(BoardLocation(0, from.Y()), BoardLocation(2, from.Y()));
+			}
+		}
 
-		Set(to, Get(from));
-		Set(from, Piece(PieceType::Empty, SideType::White));
+		MovePiece(from, to);
 
-		this->m_nextModeSide = m_nextModeSide == SideType::White ? SideType::Black : SideType::White;
+		this->m_nextMoveSide = m_nextMoveSide == SideType::White ? SideType::Black : SideType::White;
 
 		return true;
 	}
 
+	bool MovePgn(const char* pgn);
+
+	class Iterator
+	{
+	public:
+		Iterator(BoardLocation loc)
+			: m_location(loc)
+		{ }
+
+		Iterator& operator=(const Iterator& other)
+		{
+			m_location = other.m_location;
+			return *this;
+		}
+
+		Iterator operator+(int amount) const
+		{
+			return Iterator(BoardLocation(m_location.Raw()+amount));
+		}
+
+		Iterator operator++()
+		{
+			m_location = BoardLocation(m_location.Raw() + 1);
+			return (*this);
+		}
+
+		Iterator operator++(int dummy)
+		{
+			m_location = BoardLocation(m_location.Raw() + 1);
+			return (*this);
+		}
+
+		BoardLocation operator*()
+		{
+			return m_location;
+		}
+
+		bool operator==(const Iterator& other) const
+		{
+			return this->m_location.Raw() == other.m_location.Raw();
+		}
+
+		bool operator!=(const Iterator& other) const
+		{
+			return !(*this == other);
+		}
+		
+		BoardLocation m_location;
+	};
+
+	Iterator begin() const
+	{
+		return Iterator(BoardLocation(0, 0));
+	}
+
+	Iterator end() const
+	{
+		return Iterator(BoardLocation(0, 8));
+	}
+
 protected:
+
+	void MovePiece(BoardLocation from, BoardLocation to)
+	{
+		Set(to, Get(from));
+		Set(from, Piece(PieceType::Empty, SideType::White));
+	}
 
 	void Set(BoardLocation loc, Piece p)
 	{
-		m_board[loc.Raw()] = p;
+		//m_board[loc.Raw()] = p;
+
+		const auto location = loc.Raw();
+		const auto adjustment = (location % 2) * 4;
+
+		const byte mask = 0xf << adjustment;
+		const byte maskedValue = (p.RawValue << adjustment) & mask;
+
+		m_board[location / 2] = maskedValue | (m_board[location / 2] & ~mask);
+
+		assert(Get(loc) == p);
 	}
 
-	// TODO: we should be able to cut this by half, since we can represent a board square
-	// in 4 bits (nibble)
-	Piece m_board[64];
-	bool m_whiteCanCastle;
-	bool m_blackCanCastle;
-	SideType m_nextModeSide;
+	// We can fit the board into 32 bytes, each square takes a nibble
+	unsigned char m_board[32];
+
+	bool m_whiteCanCastle : 1;
+	bool m_blackCanCastle : 1;
+	SideType m_nextMoveSide : 1;
 };
+
+

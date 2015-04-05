@@ -42,6 +42,12 @@ namespace UnitTest
 	{
 	public:
 		
+		TEST_METHOD(PerfBasics)
+		{
+			BoardState b;
+			Assert::IsTrue(sizeof(b) <= 64);
+		}
+
 		TEST_METHOD(BoardSetup)
 		{
 			BoardState b;
@@ -91,6 +97,107 @@ namespace UnitTest
 
 			Assert::IsTrue(b.Move("d2", "d4"));
 			Assert::IsTrue(b.Move("e5", "d4"));
+		}
+
+		TEST_METHOD(PgnMove)
+		{
+			BoardState b;
+
+			Assert::IsTrue(b.MovePgn("e4"));
+
+			Assert::AreEqual(Piece(PieceType::Pawn, SideType::White), b.Get("e4"));
+
+
+		}
+
+		TEST_METHOD(FullPgnGame)
+		{
+			BoardState b;
+			Assert::IsTrue(b.MovePgn("e4"));
+			Assert::IsTrue(b.MovePgn("e5"));
+			Assert::IsTrue(b.MovePgn("Nf3"));
+			Assert::IsTrue(b.MovePgn("Nc6"));
+			Assert::IsTrue(b.MovePgn("Bb5"));
+			Assert::IsTrue(b.MovePgn("a6"));
+			Assert::IsTrue(b.MovePgn("Ba4"));
+			Assert::IsTrue(b.MovePgn("Nf6"));
+			Assert::IsTrue(b.MovePgn("O-O"));
+			Assert::IsTrue(b.MovePgn("Be7"));
+			Assert::IsTrue(b.MovePgn("Re1"));
+			Assert::IsTrue(b.MovePgn("b5"));
+			Assert::IsTrue(b.MovePgn("Bb3"));
+			Assert::IsTrue(b.MovePgn("d6"));
+			Assert::IsTrue(b.MovePgn("c3"));
+			Assert::IsTrue(b.MovePgn("O-O"));
+			Assert::IsTrue(b.MovePgn("h3"));
+			Assert::IsTrue(b.MovePgn("Nb8"));
+			Assert::IsTrue(b.MovePgn("d4"));
+			Assert::IsTrue(b.MovePgn("Nbd7"));
+			Assert::IsTrue(b.MovePgn("c4"));
+			Assert::IsTrue(b.MovePgn("c6"));
+			Assert::IsTrue(b.MovePgn("cxb5"));
+			Assert::IsTrue(b.MovePgn("axb5"));
+			Assert::IsTrue(b.MovePgn("Nc3"));
+			Assert::IsTrue(b.MovePgn("Bb7"));
+			Assert::IsTrue(b.MovePgn("Bg5"));
+			Assert::IsTrue(b.MovePgn("b4"));
+			Assert::IsTrue(b.MovePgn("Nb1"));
+			Assert::IsTrue(b.MovePgn("h6"));
+			Assert::IsTrue(b.MovePgn("Bh4"));
+			Assert::IsTrue(b.MovePgn("c5"));
+			Assert::IsTrue(b.MovePgn("dxe5"));
+			Assert::IsTrue(b.MovePgn("Nxe4"));
+			Assert::IsTrue(b.MovePgn("Bxe7"));
+			Assert::IsTrue(b.MovePgn("Qxe7"));
+			Assert::IsTrue(b.MovePgn("exd6"));
+			Assert::IsTrue(b.MovePgn("Qf6"));
+			Assert::IsTrue(b.MovePgn("Nbd2"));
+			Assert::IsTrue(b.MovePgn("Nxd6"));
+			Assert::IsTrue(b.MovePgn("Nc4"));
+			Assert::IsTrue(b.MovePgn("Nxc4"));
+			Assert::IsTrue(b.MovePgn("Bxc4"));
+			Assert::IsTrue(b.MovePgn("Nb6"));
+			Assert::IsTrue(b.MovePgn("Ne5"));
+			Assert::IsTrue(b.MovePgn("Rae8"));
+			Assert::IsTrue(b.MovePgn("Bxf7+"));
+			Assert::IsTrue(b.MovePgn("Rxf7"));
+			Assert::IsTrue(b.MovePgn("Nxf7"));
+			Assert::IsTrue(b.MovePgn("Rxe1+"));
+			Assert::IsTrue(b.MovePgn("Qxe1"));
+			Assert::IsTrue(b.MovePgn("Kxf7"));
+			Assert::IsTrue(b.MovePgn("Qe3"));
+			Assert::IsTrue(b.MovePgn("Qg5"));
+			Assert::IsTrue(b.MovePgn("Qxg5"));
+			Assert::IsTrue(b.MovePgn("hxg5"));
+			Assert::IsTrue(b.MovePgn("b3"));
+			Assert::IsTrue(b.MovePgn("Ke6"));
+			Assert::IsTrue(b.MovePgn("a3"));
+			Assert::IsTrue(b.MovePgn("Kd6"));
+			Assert::IsTrue(b.MovePgn("axb4"));
+			Assert::IsTrue(b.MovePgn("cxb4"));
+			Assert::IsTrue(b.MovePgn("Ra5"));
+			Assert::IsTrue(b.MovePgn("Nd5"));
+			Assert::IsTrue(b.MovePgn("f3"));
+			Assert::IsTrue(b.MovePgn("Bc8"));
+			Assert::IsTrue(b.MovePgn("Kf2"));
+			Assert::IsTrue(b.MovePgn("Bf5"));
+			Assert::IsTrue(b.MovePgn("Ra7"));
+			Assert::IsTrue(b.MovePgn("g6"));
+			Assert::IsTrue(b.MovePgn("Ra6+"));
+			Assert::IsTrue(b.MovePgn("Kc5"));
+			Assert::IsTrue(b.MovePgn("Ke1"));
+			Assert::IsTrue(b.MovePgn("Nf4"));
+			Assert::IsTrue(b.MovePgn("g3"));
+			Assert::IsTrue(b.MovePgn("Nxh3"));
+			Assert::IsTrue(b.MovePgn("Kd2"));
+			Assert::IsTrue(b.MovePgn("Kb5"));
+			Assert::IsTrue(b.MovePgn("Rd6"));
+			Assert::IsTrue(b.MovePgn("Kc5"));
+			Assert::IsTrue(b.MovePgn("Ra6"));
+			Assert::IsTrue(b.MovePgn("Nf2"));
+			Assert::IsTrue(b.MovePgn("g4"));
+			Assert::IsTrue(b.MovePgn("Bd3"));
+			Assert::IsTrue(b.MovePgn("Re6"));
 		}
 
 	};
