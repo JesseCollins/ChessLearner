@@ -10,3 +10,6 @@
 /ChessGame/Release/*
 /ChessGame/ipch/*
 /UnitTest/Debug/*
+*/Debug/*
+*/Release/*
+*/Generated Files/*

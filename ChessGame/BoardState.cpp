@@ -27,6 +27,18 @@ int GetHomeRow(SideType side)
 	return -1;
 }
 
+int GetEnPassantRow(SideType side)
+{
+	switch (side)
+	{
+	case SideType::White: return 2;
+	case SideType::Black: return 5;
+	}
+	throw "Unexpected side!";
+	return -1;
+}
+
+
 enum class PgnExprType
 {
 	End,

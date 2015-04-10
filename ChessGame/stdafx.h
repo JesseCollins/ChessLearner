@@ -12,6 +12,8 @@
 #include <cstring>
 #include <iostream>
 
+#define ENABLE_PRINT
+
 #include "BoardState.h"
 
 // TODO: reference additional headers your program requires here

@@ -1,7 +1,8 @@
+#pragma once
 
 #include <assert.h>
+#include <functional>
 
-#pragma once
 
 typedef unsigned char byte;
 
@@ -35,6 +36,7 @@ enum class SideType : byte
 };
 
 int GetHomeRow(SideType side);
+int GetEnPassantRow(SideType side);
 
 struct Piece
 {
@@ -153,12 +155,14 @@ private:
 
 extern const BoardLocation InvalidBoardLocation;
 
+
 class BoardState
 {
 public:
 
 	BoardState()
 		: m_nextMoveSide(SideType::White)
+		, m_enPassantCol(-1)
 	{
 		static_assert(static_cast<int>(PieceType::King) < (1 << 3), "Ensure PieceType can fit in 3 bits");
 
@@ -186,6 +190,7 @@ public:
 		}
 	}
 
+#ifdef ENABLE_PRINT
 	void Print() const
 	{
 		for (int r = 0; r < 8; ++r)
@@ -198,6 +203,7 @@ public:
 		}
 
 	}
+#endif
 
 	Piece Get(int col, int row) const
 	{
@@ -279,8 +285,21 @@ public:
 				// Must be one square in correct direction
 				if (ydist != 1) return false;
 
-				// Must capture
-				if (toPiece.Type == PieceType::Empty) return false;
+				// en passant?
+				if (to.X() == m_enPassantCol && to.Y() == GetEnPassantRow(m_nextMoveSide))
+				{
+					// that's en passant
+				}
+				else
+				{
+					// Must capture
+					if (toPiece.Type == PieceType::Empty) return false;
+				}
+			}
+			else
+			{
+				// non-diagonal movements can't capture
+				if (toPiece.Type != PieceType::Empty) return false;
 			}
 		}
 		else if (fromPiece.Type == PieceType::Bishop)
@@ -308,10 +327,10 @@ public:
 		else if (fromPiece.Type == PieceType::King)
 		{
 			// castling!  hacky, should this be done differently?
-			if (ydist == 0 && from.X() == 4 && (to.X() == 2 || to.X() == 6))
+			if (GetHomeRow(m_nextMoveSide) == from.Y() &&
+				ydist == 0 && from.X() == 4 && (to.X() == 2 || to.X() == 6))
 			{
-				// TODO: handle all the fancy cases.
-				return true;
+				// TODO: handle all the fancy cases.				
 			}
 			else
 			{
@@ -323,36 +342,79 @@ public:
 			assert(false);
 			return false;
 		}
+
+		// Now the fancy stuff.  Can't move into check.
+		// If this hypothetical move is taking a king, it's always ideal!
+		if (toPiece.Type != PieceType::King)
+		{
+			auto newState = Move2(from, to, true);
+			if (newState.CanTakeKing())
+			{
+				// If move is allowed, king can be taken
+				return false;
+			}
+		}
+
 		return true;
 	}
 
-	bool Move(BoardLocation from, BoardLocation to)
+	typedef std::function<void(BoardLocation, BoardLocation)> MoveCallback;
+
+	bool Move(BoardLocation from, BoardLocation to, bool force=false)
 	{
-		if (!CanMove(from, to))
+		if (!force && !CanMove(from, to))
 		{
 			return false;
-		}
-		
-		if (Get(from).Type == PieceType::King)
-		{
-			if (from.X() + 2 == to.X())
-			{
-				MovePiece(BoardLocation(7, from.Y()), BoardLocation(5, from.Y()));
-			}
-			if (from.X() - 2 == to.X())
-			{
-				MovePiece(BoardLocation(0, from.Y()), BoardLocation(2, from.Y()));
-			}
-		}
+		}		
+		return MoveImpl(from, to);
+	}
 
-		MovePiece(from, to);
+	bool Move(BoardLocation from, BoardLocation to, MoveCallback callback)
+	{
+		if (!CanMove(from, to)) return false;
+		return MoveImpl(from, to, callback);
+	}
 
-		this->m_nextMoveSide = m_nextMoveSide == SideType::White ? SideType::Black : SideType::White;
-
-		return true;
+	BoardState Move2(BoardLocation from, BoardLocation to, bool force=false) const
+	{
+		BoardState newState(*this);
+		newState.Move(from, to, force);
+		return newState;
 	}
 
 	bool MovePgn(const char* pgn);
+
+	bool CanTakeKing() const
+	{
+		for (auto from : *this)
+		{
+			for (auto to : *this)
+			{
+				if (Get(to).Type == PieceType::King && CanMove(from, to))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool IsCheckmate() const
+	{
+		// Checkmate: for every possible move, next move can take king!
+		for (auto from : *this)
+		{
+			for (auto to : *this)
+			{
+				if (CanMove(from, to))
+				{
+					auto newBoard = Move2(from, to);
+					if (!newBoard.CanTakeKing()) return false;
+				}
+			}
+		}
+		return true;
+	}
 
 	class Iterator
 	{
@@ -412,12 +474,69 @@ public:
 		return Iterator(BoardLocation(0, 8));
 	}
 
+
 protected:
 
-	void MovePiece(BoardLocation from, BoardLocation to)
+	bool MoveImpl(BoardLocation from, BoardLocation to, MoveCallback callback=nullptr)
 	{
-		Set(to, Get(from));
-		Set(from, Piece(PieceType::Empty, SideType::White));
+		auto movingPiece = Get(from);
+
+		if (Get(from).Type == PieceType::King)
+		{
+			if (from.X() + 2 == to.X())
+			{
+				MovePiece(BoardLocation(7, from.Y()), BoardLocation(5, from.Y()), callback);
+			}
+			if (from.X() - 2 == to.X())
+			{
+				MovePiece(BoardLocation(0, from.Y()), BoardLocation(3, from.Y()), callback);
+			}
+		}
+
+		if (Get(from).Type == PieceType::Pawn
+			&& from.X() != to.X()
+			&& Get(to).Type == PieceType::Empty)
+		{
+			// en passant -- remove the victim
+			auto victimLoc = BoardLocation(m_enPassantCol, from.Y());
+			MovePiece(victimLoc, InvalidBoardLocation, callback);
+		}
+
+		MovePiece(from, to, callback);
+
+		// Update state
+
+		if (movingPiece.Type == PieceType::Pawn && abs(from.Y() - to.Y()) == 2)
+		{
+			m_enPassantCol = from.X();
+		}
+		else
+		{
+			m_enPassantCol = -1;
+		}
+
+		this->m_nextMoveSide = m_nextMoveSide == SideType::White ? SideType::Black : SideType::White;
+
+		return true;
+	}
+
+	void MovePiece(BoardLocation from, BoardLocation to, MoveCallback callback)
+	{
+		if (callback)
+		{
+			if (Get(to).Type != PieceType::Empty)
+			{
+				callback(to, InvalidBoardLocation);
+			}			
+		}
+
+		if (to != InvalidBoardLocation)	Set(to, Get(from));
+		if (from != InvalidBoardLocation) Set(from, Piece(PieceType::Empty, SideType::White));
+
+		if (callback)
+		{
+			callback(from, to);
+		}
 	}
 
 	void Set(BoardLocation loc, Piece p)
@@ -441,6 +560,10 @@ protected:
 	bool m_whiteCanCastle : 1;
 	bool m_blackCanCastle : 1;
 	SideType m_nextMoveSide : 1;
+	int m_enPassantCol;
 };
 
+
+class BoardController
+{};
 
