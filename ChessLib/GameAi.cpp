@@ -22,7 +22,7 @@ int GameAi::GetBoardScore(const BoardState& board)
 	for (auto it : board)
 	{
 		auto p = board.Get(it);		
-		const int score = scores[static_cast<int>(p.GetSide())] * multiplier[static_cast<int>(p.GetSide())];
+		const int score = scores[static_cast<int>(p.Type)] * multiplier[static_cast<int>(p.Side)];
 		total += score;
 	}
 
