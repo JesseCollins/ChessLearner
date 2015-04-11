@@ -10,5 +10,6 @@ public:
 
 	ChessMove DecideMove(const BoardState& board);
 
+	int GameAi::GetBoardScore(const BoardState& board);
 };
 

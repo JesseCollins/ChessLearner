@@ -83,3 +83,174 @@ BoardState::MoveCollection BoardState::ValidMoves() const
 	return collection;
 }
 
+
+bool BoardState::CanMove(BoardLocation from, BoardLocation to) const
+{
+	auto fromPiece = Get(from);
+	auto toPiece = Get(to);
+
+	// There's no piece there
+	if (fromPiece.Type == PieceType::Empty) return false;
+
+	// It's not your turn
+	if (fromPiece.Side != m_nextMoveSide) return false;
+
+	// Can't capture own piece (also covers moving to same square)
+	if (toPiece.Type != PieceType::Empty && toPiece.Side == fromPiece.Side) return false;
+
+	const int xdist = abs(to.X() - from.X());
+	const int ydist = abs(to.Y() - from.Y());
+
+	if (fromPiece.Type == PieceType::Pawn)
+	{
+		int direction = (m_nextMoveSide == SideType::White) ? -1 : 1;
+		int startRow = (m_nextMoveSide == SideType::White) ? 6 : 1;
+
+		// Move correct direction
+		if (Sign(to.Y() - from.Y()) != direction) return false;
+
+		// Max 2 squares
+		if (ydist > 2) return false;
+
+		// 2 squares only ok from start position
+		if (ydist == 2 && from.Y() != startRow) return false;
+
+		// Capture
+		if (from.X() != to.X())
+		{
+			// Must be one square left or right
+			if (abs(from.X() - to.X()) != 1) return false;
+
+			// Must be one square in correct direction
+			if (ydist != 1) return false;
+
+			// en passant?
+			if (to.X() == m_enPassantCol && to.Y() == GetEnPassantRow(m_nextMoveSide))
+			{
+				// that's en passant
+			}
+			else
+			{
+				// Must capture
+				if (toPiece.Type == PieceType::Empty) return false;
+			}
+		}
+		else
+		{
+			// non-diagonal movements can't capture
+			if (toPiece.Type != PieceType::Empty) return false;
+		}
+
+		// Ensure unobstructed for 2-square moves
+		if (IsObstructed(from, to)) return false;
+	}
+	else if (fromPiece.Type == PieceType::Bishop)
+	{
+		if (xdist != ydist) return false;
+		if (IsObstructed(from, to)) return false;
+	}
+	else if (fromPiece.Type == PieceType::Knight)
+	{
+		if (xdist + ydist != 3) return false;
+		if (xdist == 0 || ydist == 0) return false;
+	}
+	else if (fromPiece.Type == PieceType::Rook)
+	{
+		if (xdist != 0 && ydist != 0) return false;
+		if (IsObstructed(from, to)) return false;
+	}
+	else if (fromPiece.Type == PieceType::Queen)
+	{
+		const bool movingLikeRook = xdist == 0 || ydist == 0;
+		const bool movingLikeBishop = xdist == ydist;
+		if (!movingLikeBishop && !movingLikeRook) return false;
+		if (IsObstructed(from, to)) return false;
+	}
+	else if (fromPiece.Type == PieceType::King)
+	{
+		// castling!  hacky, should this be done differently?
+		if (GetHomeRow(m_nextMoveSide) == from.Y() &&
+			ydist == 0 && from.X() == 4 && (to.X() == 2 || to.X() == 6))
+		{
+			if (!CanCastle(from, to)) return false;
+		}
+		else
+		{
+			if (xdist > 1 || ydist > 1) return false;
+		}
+	}
+	else
+	{
+		assert(false);
+		return false;
+	}
+
+	// Now the fancy stuff.  Can't move into check.
+	// If this hypothetical move is taking a king, it's always ideal!
+	if (toPiece.Type != PieceType::King)
+	{
+		auto newState = Move2(from, to, true);
+		if (newState.CanTakeKing())
+		{
+			// If move is allowed, king can be taken
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+bool BoardState::CanCastle(BoardLocation from, BoardLocation to) const
+{
+	if (IsCheck())
+	{
+		return false;
+	}
+
+	// Some math to avoid branching.  
+	const auto offset = static_cast<int>(m_nextMoveSide)* 3;
+	if (m_hasPieceMoved.test(offset))
+	{
+		return false;
+	}
+	if (m_hasPieceMoved.test(offset + to.X() / 5 + 1))
+	{
+		return false;
+	}	
+
+	const auto direction = Sign(to.X() - from.X());
+	const auto rookDirection = -direction;
+
+	// Rook must be there...
+	BoardLocation rookLocation(7, from.Y());
+	if (to.X() < from.X())
+	{
+		rookLocation = BoardLocation(0, from.Y());
+	}	
+	if (Get(rookLocation) != Piece(PieceType::Rook, m_nextMoveSide))
+	{
+		return false;
+	}
+
+	// ...and unobstructed
+	if (Get(rookLocation.X() + rookDirection, from.Y()).Type != PieceType::Empty)
+	{
+		return false;
+	}
+
+	// Can't castle through check
+	auto intermediate = BoardLocation((from.X() + to.X()) / 2, from.Y());
+	if (!CanMove(from, intermediate))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+
+SideType OtherSide(SideType side)
+{
+	return static_cast<SideType>((static_cast<byte>(side)+1) % 2);
+}

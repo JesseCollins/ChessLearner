@@ -210,16 +210,77 @@ namespace UnitTest
 				"        "
 				"        "
 				"        "
-				"    K  R"
+				"R   K  R"
 				, SideType::White);
 
 			Assert::AreEqual(Piece(PieceType::King, SideType::White), b.Get("e1"));
 			Assert::AreEqual(Piece(PieceType::Rook, SideType::White), b.Get("h1"));
 			
-			Assert::IsTrue(b.Move("e1" ,  "g1", nullptr));
+			auto b2 = b;
+			Assert::IsTrue(b2.Move("e1", "g1", nullptr));		
+
+			b2 = b;
+			Assert::IsTrue(b2.Move("e1", "c1", nullptr));
 		}
 
-		TEST_METHOD(Castling)
+		void AssertCantCastle(const BoardState& b)
+		{
+			auto local = b;
+			Assert::IsFalse(local.Move("e1", "g1", nullptr));
+			Assert::IsFalse(local.Move("e1", "c1", nullptr));
+		}
+
+		TEST_METHOD(CastlingNeedsRook)
+		{			
+			AssertCantCastle(BoardState(
+				"k       "
+				"p       "
+				"        "
+				"        "
+				"        "
+				"        "
+				"        "
+				"    K   "
+				, SideType::White));
+
+			AssertCantCastle(BoardState(
+				"k       "
+				"p       "
+				"        "
+				"        "
+				"        "
+				"        "
+				"        "
+				"RQ  K   "
+				, SideType::White));
+		}
+
+		TEST_METHOD(CantCastleThroughCheck)
+		{
+			AssertCantCastle(BoardState(
+				"k       "
+				"p       "
+				"        "
+				"     r  "
+				"        "
+				"        "
+				"        "
+				"    K  R"
+				, SideType::White));
+
+			AssertCantCastle(BoardState(
+				"k       "
+				"p       "
+				"        "
+				"    r   "
+				"        "
+				"        "
+				"        "
+				"    K  R"
+				, SideType::White));
+		}
+
+		TEST_METHOD(CantCastleAfterKingMoved)
 		{
 			BoardState b(
 				"k       "
@@ -229,12 +290,48 @@ namespace UnitTest
 				"        "
 				"        "
 				"        "
-				"    K   "
+				"R    K R"
 				, SideType::White);
-			
-			//Assert::IsFalse(b.Move("e1", "g1", nullptr));
+
+			Assert::IsTrue(b.Move("f1", "e1"));
+			Assert::IsTrue(b.Move("a7", "a5"));
+			AssertCantCastle(b);
 		}
 
+		TEST_METHOD(CantCastleAfterRookMoved)
+		{
+			BoardState b(
+				"k       "
+				"p       "
+				"        "
+				"        "
+				"        "
+				"        "
+				"        "
+				"    K  R"
+				, SideType::White);
 
+			Assert::IsTrue(b.Move("h1", "h2"));
+			Assert::IsTrue(b.Move("a7", "a5"));
+			Assert::IsTrue(b.Move("h2", "h1"));
+			Assert::IsTrue(b.Move("a5", "a4"));
+			AssertCantCastle(b);
+		}
+
+		TEST_METHOD(RegressPawnCantJumpPieces)
+		{
+			BoardState b(
+				"k       "
+				"p       "
+				"P       "
+				"        "
+				"        "
+				"        "
+				"        "
+				"       K"
+				, SideType::Black);
+
+			Assert::IsFalse(b.Move("a7", "a5"));
+		}
 	};
 }

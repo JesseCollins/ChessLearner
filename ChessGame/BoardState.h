@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <functional>
 #include <vector>
+#include <bitset>
 
 typedef unsigned char byte;
 
@@ -35,6 +36,7 @@ enum class SideType : byte
 	Black
 };
 
+
 struct Piece
 {
 	Piece()
@@ -57,6 +59,11 @@ struct Piece
 			other.Side == this->Side
 			&&	other.Type == this->Type
 			);
+	}
+
+	bool operator!=(const Piece& other) const
+	{
+		return !(*this == other);
 	}
 
 	char GetChar() const
@@ -155,6 +162,7 @@ PieceType GetPieceType(const char c);
 Piece GetPieceAndSide(const char c);
 int GetHomeRow(SideType side);
 int GetEnPassantRow(SideType side);
+SideType OtherSide(SideType side);
 
 
 // Encapsulate one chess move
@@ -260,118 +268,8 @@ public:
 		return false;
 	}
 
-	bool CanMove(BoardLocation from, BoardLocation to) const
-	{
-		auto fromPiece = Get(from);
-		auto toPiece = Get(to);
-
-		// There's no piece there
-		if (fromPiece.Type == PieceType::Empty) return false;
-
-		// It's not your turn
-		if (fromPiece.Side != m_nextMoveSide) return false;
-
-		// Can't capture own piece (also covers moving to same square)
-		if (toPiece.Type != PieceType::Empty && toPiece.Side == fromPiece.Side) return false;
-
-		const int xdist = abs(to.X() - from.X());
-		const int ydist = abs(to.Y() - from.Y());
-
-		if (fromPiece.Type == PieceType::Pawn)
-		{			
-			int direction = (m_nextMoveSide == SideType::White) ? -1 : 1;
-			int startRow = (m_nextMoveSide == SideType::White) ? 6 : 1;
-
-			// Move correct direction
-			if (Sign(to.Y() - from.Y()) != direction) return false;
-
-			// Max 2 squares
-			if (ydist > 2) return false;
-
-			// 2 squares only ok from start position
-			if (ydist == 2 && from.Y() != startRow) return false;
-
-			// Capture
-			if (from.X() != to.X())
-			{
-				// Must be one square left or right
-				if (abs(from.X() - to.X()) != 1) return false;
-
-				// Must be one square in correct direction
-				if (ydist != 1) return false;
-
-				// en passant?
-				if (to.X() == m_enPassantCol && to.Y() == GetEnPassantRow(m_nextMoveSide))
-				{
-					// that's en passant
-				}
-				else
-				{
-					// Must capture
-					if (toPiece.Type == PieceType::Empty) return false;
-				}
-			}
-			else
-			{
-				// non-diagonal movements can't capture
-				if (toPiece.Type != PieceType::Empty) return false;
-			}
-		}
-		else if (fromPiece.Type == PieceType::Bishop)
-		{
-			if (xdist != ydist) return false;
-			if (IsObstructed(from, to)) return false;
-		}
-		else if (fromPiece.Type == PieceType::Knight)
-		{
-			if (xdist + ydist != 3) return false;
-			if (xdist == 0 || ydist == 0) return false;
-		}
-		else if (fromPiece.Type == PieceType::Rook)
-		{
-			if (xdist != 0 && ydist != 0) return false;
-			if (IsObstructed(from, to)) return false;
-		}
-		else if (fromPiece.Type == PieceType::Queen)
-		{
-			const bool movingLikeRook = xdist == 0 || ydist == 0;
-			const bool movingLikeBishop = xdist == ydist;
-			if (!movingLikeBishop && !movingLikeRook) return false;
-			if (IsObstructed(from, to)) return false;
-		}
-		else if (fromPiece.Type == PieceType::King)
-		{
-			// castling!  hacky, should this be done differently?
-			if (GetHomeRow(m_nextMoveSide) == from.Y() &&
-				ydist == 0 && from.X() == 4 && (to.X() == 2 || to.X() == 6))
-			{
-				// TODO: handle all the fancy cases.				
-			}
-			else
-			{
-				if (xdist > 1 || ydist > 1) return false;
-			}
-		}
-		else
-		{
-			assert(false);
-			return false;
-		}
-
-		// Now the fancy stuff.  Can't move into check.
-		// If this hypothetical move is taking a king, it's always ideal!
-		if (toPiece.Type != PieceType::King)
-		{
-			auto newState = Move2(from, to, true);
-			if (newState.CanTakeKing())
-			{
-				// If move is allowed, king can be taken
-				return false;
-			}
-		}
-
-		return true;
-	}
+	bool CanMove(BoardLocation from, BoardLocation to) const;
+	bool CanCastle(BoardLocation from, BoardLocation to) const;
 
 	typedef std::function<void(BoardLocation, BoardLocation)> MoveCallback;
 
@@ -410,6 +308,18 @@ public:
 					return true;
 				}
 			}
+		}
+		return false;
+	}
+
+	bool IsCheck() const
+	{
+		// This is check if the opponent could take the king if she had another free move
+		auto temp = *this;
+		temp.m_nextMoveSide = OtherSide(temp.m_nextMoveSide);
+		if (temp.CanTakeKing())
+		{
+			return true;
 		}
 		return false;
 	}
@@ -492,6 +402,11 @@ public:
 	typedef std::vector<ChessMove> MoveCollection;
 	MoveCollection ValidMoves() const;
 
+	SideType NextSide() const
+	{
+		return m_nextMoveSide;
+	}
+
 protected:
 
 	bool MoveImpl(BoardLocation from, BoardLocation to, MoveCallback callback=nullptr)
@@ -530,6 +445,22 @@ protected:
 		else
 		{
 			m_enPassantCol = -1;
+		}
+
+		if (movingPiece.Type == PieceType::King)
+		{
+			const int sideOffset = static_cast<int>(m_nextMoveSide)* 3;
+			m_hasPieceMoved.set(sideOffset);
+		}
+
+		if (movingPiece.Type == PieceType::Rook && from.Y() == GetHomeRow(m_nextMoveSide))
+		{
+			if (from.X() == 0 || from.X() == 7)
+			{
+				// Rook moving from starting pos, make sure to remember it moved
+				const int sideOffset = static_cast<int>(m_nextMoveSide)* 3;
+				m_hasPieceMoved.set(sideOffset + 1 + (from.X() / 7));
+			}
 		}
 
 		this->m_nextMoveSide = m_nextMoveSide == SideType::White ? SideType::Black : SideType::White;
@@ -574,8 +505,16 @@ protected:
 	// We can fit the board into 32 bytes, each square takes a nibble
 	unsigned char m_board[32];
 
-	bool m_whiteCanCastle : 1;
-	bool m_blackCanCastle : 1;
+	
+	std::bitset<6> m_hasPieceMoved;
+	// 0 - white king
+	// 1 - white rook 1
+	// 2 - white rook 8
+	// 3 - black king
+	// 4 - black rook 1
+	// 5 - black rook 8
+	
+
 	SideType m_nextMoveSide : 1;
 	int m_enPassantCol;
 };
