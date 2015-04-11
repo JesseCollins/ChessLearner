@@ -7,6 +7,8 @@
 
 #include "MainPage.g.h"
 #include "BoardState.h"
+#include <memory>
+#include "GameAi.h"
 
 namespace DesktopChess
 {
@@ -23,6 +25,7 @@ namespace DesktopChess
 		void ResetSquareColors();
 		void ArrangePieces();
 		void MakeMove(ChessMove move);
+
 	private:
 		BoardState m_boardState;
 		void OnTapped(Platform::Object ^sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs ^e);
@@ -30,8 +33,11 @@ namespace DesktopChess
 		Windows::UI::Xaml::Shapes::Rectangle^ m_squares[64];
 		Windows::UI::Xaml::Controls::TextBlock^ m_pieceTextBlocks[64];
 
+		Windows::UI::Xaml::DispatcherTimer^ m_aiTimer;
+		std::unique_ptr<GameAi> m_gameAi;
 
 		BoardLocation m_selected;
 		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void OnTick(Platform::Object ^sender, Platform::Object ^args);
 	};
 }

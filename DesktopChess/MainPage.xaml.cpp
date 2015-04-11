@@ -246,9 +246,33 @@ void MainPage::OnTapped(Platform::Object ^sender, Windows::UI::Xaml::Input::Tapp
 
 void DesktopChess::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	GameAi ai;
-	auto move = ai.DecideMove(m_boardState);
+	m_gameAi = std::make_unique<GameAi>();
+	m_gameAi->StartDecideMove(m_boardState);
+
+	if (m_aiTimer)
+	{
+		m_aiTimer->Stop();
+	}
+
+	m_aiTimer = ref new DispatcherTimer();
+
+	auto ts = Windows::Foundation::TimeSpan();
+	ts.Duration = 500 * 1000 * 10;
+
+	m_aiTimer->Interval = ts;
+	m_aiTimer->Tick += ref new Windows::Foundation::EventHandler<Platform::Object ^>(this, &DesktopChess::MainPage::OnTick);
+	m_aiTimer->Start();
+}
 
 
-	MakeMove(move);
+void DesktopChess::MainPage::OnTick(Platform::Object ^sender, Platform::Object ^args)
+{
+	if (m_gameAi->IsFinished())
+	{
+		MakeMove(m_gameAi->GetMove());
+
+		m_gameAi = nullptr;
+		m_aiTimer->Stop();
+		m_aiTimer = nullptr;
+	}
 }

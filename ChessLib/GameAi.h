@@ -9,9 +9,19 @@ public:
 	GameAi();
 	~GameAi();
 
-	ChessMove DecideMove(const BoardState& board);
+	void StartDecideMove(const BoardState& board);
 
 	int GameAi::GetBoardScore(const BoardState& board);
+
+	bool IsFinished() const
+	{
+		return m_bestMove.IsValid();
+	}
+
+	ChessMove GetMove() const
+	{
+		return m_bestMove;
+	}
 
 private:
 	ChessMove m_bestMove;

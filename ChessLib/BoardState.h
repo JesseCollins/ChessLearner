@@ -136,12 +136,12 @@ public:
 		return m_sq / 8;
 	}
 
-	bool operator==(const BoardLocation& other)
+	bool operator==(const BoardLocation& other) const
 	{
 		return m_sq == other.m_sq;
 	}
 
-	bool operator!=(const BoardLocation& other)
+	bool operator!=(const BoardLocation& other) const
 	{
 		return !(*this == other);
 	}
@@ -169,7 +169,7 @@ SideType OtherSide(SideType side);
 class ChessMove
 {
 public:
-	bool IsValid() { return From != InvalidBoardLocation; }
+	bool IsValid() const { return From != InvalidBoardLocation; }
 
 	// A move is represented with a "from" and "to" location,
 	// castling is represented by moving the king 2 squares either

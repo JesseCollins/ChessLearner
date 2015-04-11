@@ -32,17 +32,14 @@ int GameAi::GetBoardScore(const BoardState& board)
 }
 
 
-ChessMove GameAi::DecideMove(const BoardState& board)
+void GameAi::StartDecideMove(const BoardState& board)
 {
 	DWORD threadId;
 
 	m_board = &board;
 
 	auto newThread = ::CreateThread(nullptr, 0, &GameAi::WorkerThreadStatic, this, 0, &threadId);
-
-	::WaitForSingleObject(newThread, INFINITE);
-
-	return m_bestMove;
+	::CloseHandle(newThread);
 }
 
 DWORD WINAPI GameAi::WorkerThread()
