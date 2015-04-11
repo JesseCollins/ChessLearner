@@ -200,5 +200,41 @@ namespace UnitTest
 			Assert::IsTrue(b.MovePgn("Re6"));
 		}
 
+		TEST_METHOD(SimpleCastle)
+		{
+			BoardState b(
+				"k       "
+				"p       "
+				"        "
+				"        "
+				"        "
+				"        "
+				"        "
+				"    K  R"
+				, SideType::White);
+
+			Assert::AreEqual(Piece(PieceType::King, SideType::White), b.Get("e1"));
+			Assert::AreEqual(Piece(PieceType::Rook, SideType::White), b.Get("h1"));
+			
+			Assert::IsTrue(b.Move("e1" ,  "g1", nullptr));
+		}
+
+		TEST_METHOD(Castling)
+		{
+			BoardState b(
+				"k       "
+				"p       "
+				"        "
+				"        "
+				"        "
+				"        "
+				"        "
+				"    K   "
+				, SideType::White);
+			
+			//Assert::IsFalse(b.Move("e1", "g1", nullptr));
+		}
+
+
 	};
 }

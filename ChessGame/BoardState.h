@@ -35,9 +35,6 @@ enum class SideType : byte
 	Black
 };
 
-int GetHomeRow(SideType side);
-int GetEnPassantRow(SideType side);
-
 struct Piece
 {
 	Piece()
@@ -152,8 +149,13 @@ private:
 
 	byte m_sq;
 };
-
 extern const BoardLocation InvalidBoardLocation;
+
+PieceType GetPieceType(const char c);
+Piece GetPieceAndSide(const char c);
+int GetHomeRow(SideType side);
+int GetEnPassantRow(SideType side);
+
 
 // Encapsulate one chess move
 class ChessMove
@@ -200,6 +202,8 @@ public:
 			Set({ 7, row }, Piece{ PieceType::Rook, side });
 		}
 	}
+
+	BoardState(const char* board, SideType nextMove);	
 
 #ifdef ENABLE_PRINT
 	void Print() const
