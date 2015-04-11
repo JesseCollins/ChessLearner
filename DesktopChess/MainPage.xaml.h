@@ -6,7 +6,7 @@
 #pragma once
 
 #include "MainPage.g.h"
-#include "..\ChessGame\BoardState.h"
+#include "BoardState.h"
 
 namespace DesktopChess
 {
@@ -22,7 +22,7 @@ namespace DesktopChess
 		void SetupBoard();
 		void ResetSquareColors();
 		void ArrangePieces();
-		void MakeMove(BoardLocation from, BoardLocation to);
+		void MakeMove(ChessMove move);
 	private:
 		BoardState m_boardState;
 		void OnTapped(Platform::Object ^sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs ^e);
@@ -32,5 +32,6 @@ namespace DesktopChess
 
 
 		BoardLocation m_selected;
+		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 	};
 }

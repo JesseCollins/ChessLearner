@@ -210,117 +210,24 @@ bool BoardState::MovePgn(const char* pgn)
 	{
 		throw "No piece there";
 	}
-
 	return Move(from, to);
 }
 
-#if 0
-bool BoardState::MovePgn(const char* pgn)
+
+BoardState::MoveCollection BoardState::ValidMoves() const
 {
-	int size = strlen(pgn);
-	/*
-	if (size == 2)
-	{
-		// Must be a simple pawn move
-		auto to = BoardLocation(pgn);
+	MoveCollection collection;
 
-		for (auto loc : *this)
+	for (auto from : *this)
+	{
+		for (auto to : *this)
 		{
-			if (this->CanMove(loc, to))
+			if (CanMove(from, to))
 			{
-				Move(loc, to);
-				return true;
+				collection.push_back({ from, to });
 			}
 		}
 	}
-	*/
-
-	PieceType movingPieceType = PieceType::Invalid;
-	BoardLocation from(InvalidBoardLocation);
-	BoardLocation to(InvalidBoardLocation);
-
-	PgnExpression expr;
-	do
-	{
-		expr = GetNextPgnExpression(pgn);
-
-		if (expr.Type == PgnExprType::Location)
-		{
-			BoardLocation loc(pgn);
-			if (movingPieceType == PieceType::Invalid && from == InvalidBoardLocation)
-			{
-				if (Get(BoardLocation(pgn)).Side == m_nextMoveSide)
-				{
-					// must be moving *from* this square
-					from = BoardLocation(pgn);
-				}
-				else
-				{
-					// This is a location but we don't know what piece yet.
-					// Must be a pawn move!
-					to = BoardLocation(pgn);
-					BoardLocation fromCandidate(InvalidBoardLocation);
-					for (auto loc : *this)
-					{
-						if (this->CanMove(loc, to))
-						{
-							if (fromCandidate == InvalidBoardLocation)
-							{
-								fromCandidate = loc;
-							}
-							else
-							{
-								// ambiguous!
-								return false;
-							}
-						}
-					}
-					if (fromCandidate == InvalidBoardLocation)
-					{
-						// couldn't find candidate pawn!
-						return false;
-					}
-					from = fromCandidate;
-				}
-			}
-			else
-			{
-				// We know the piece type.  This could be a destination or
-				// a disambiguator...			
-				auto peekExpr = GetNextPgnExpression(expr.End + 1);
-				const bool isDisambiguator =
-					peekExpr.Type == PgnExprType::Location ||
-					peekExpr.Type == PgnExprType::Equals ||
-					peekExpr.Type == PgnExprType::Takes;
-
-				if (isDisambiguator)
-				{
-					if (from != InvalidBoardLocation)
-					{
-						return false;
-					}
-					from = loc;
-				}
-				else
-				{
-					to = loc;
-				}
-			}
-		}
-		else if (expr.Type == PgnExprType::PieceType)
-		{
-			movingPieceType = GetPieceType(pgn[0]);
-
-		}
-
-
-		pgn = expr.End + 1;
-	}
-	while (expr.Type != PgnExprType::End);
-
-
-	// Couldn't figure out what to do!
-	return false;
+	return collection;
 }
 
-#endif

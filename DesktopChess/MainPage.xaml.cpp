@@ -5,6 +5,7 @@
 
 #include "pch.h"
 #include "MainPage.xaml.h"
+#include "GameAi.h"
 
 using namespace DesktopChess;
 
@@ -163,9 +164,9 @@ void DoAnimation(UIElement^ e, double dx, double dy)
 	
 }
 
-void MainPage::MakeMove(BoardLocation from, BoardLocation to)
+void MainPage::MakeMove(ChessMove move)
 {
-	m_boardState.Move(from, to, [&](BoardLocation from, BoardLocation to) {
+	m_boardState.Move(move.From, move.To, [&](BoardLocation from, BoardLocation to) {
 
 		if (to == InvalidBoardLocation)
 		{
@@ -213,7 +214,7 @@ void MainPage::OnTapped(Platform::Object ^sender, Windows::UI::Xaml::Input::Tapp
 
 	if (m_boardState.CanMove(m_selected, tappedLoc))
 	{
-		MakeMove(m_selected, tappedLoc);
+		MakeMove({ m_selected, tappedLoc });
 		m_selected = InvalidBoardLocation;
 	}
 	else
@@ -240,4 +241,14 @@ void MainPage::OnTapped(Platform::Object ^sender, Windows::UI::Xaml::Input::Tapp
 		}
 
 	}
+}
+
+
+void DesktopChess::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	GameAi ai;
+	auto move = ai.DecideMove(m_boardState);
+
+
+	MakeMove(move);
 }

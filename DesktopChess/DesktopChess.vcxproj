@@ -111,6 +111,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204</DisableSpecificWarnings>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <AdditionalIncludeDirectories>C:\git\ChessLearner\ChessLearner\ChessGame;C:\git\ChessLearner\ChessLearner\ChessLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ChessLib.lib;%(AdditionalDependencies)</AdditionalDependencies>

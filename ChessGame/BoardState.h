@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <functional>
-
+#include <vector>
 
 typedef unsigned char byte;
 
@@ -155,6 +155,17 @@ private:
 
 extern const BoardLocation InvalidBoardLocation;
 
+// Encapsulate one chess move
+class ChessMove
+{
+public:
+	// A move is represented with a "from" and "to" location,
+	// castling is represented by moving the king 2 squares either
+	// left or right.
+	BoardLocation From;
+	BoardLocation To;
+	PieceType PromotionPiece; // not always needed!
+};
 
 class BoardState
 {
@@ -474,6 +485,8 @@ public:
 		return Iterator(BoardLocation(0, 8));
 	}
 
+	typedef std::vector<ChessMove> MoveCollection;
+	MoveCollection ValidMoves() const;
 
 protected:
 

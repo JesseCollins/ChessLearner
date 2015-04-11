@@ -31,7 +31,7 @@
 
         </Grid>
             <StackPanel>
-                <Button>Automove!</Button>
+                <Button Click="Button_Click">Automove!</Button>
             </StackPanel>
         </StackPanel>
     </Grid>
