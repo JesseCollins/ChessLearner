@@ -32,13 +32,13 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ChessGame\BoardState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GameAi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Pgn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BoardState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
