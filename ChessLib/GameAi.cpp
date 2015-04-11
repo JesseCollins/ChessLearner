@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 GameAi::GameAi()
+	: m_bestMove(InvalidChessMove)
 {
 	::srand(::GetTickCount());
 }
@@ -33,6 +34,26 @@ int GameAi::GetBoardScore(const BoardState& board)
 
 ChessMove GameAi::DecideMove(const BoardState& board)
 {
+	DWORD threadId;
+
+	m_board = &board;
+
+	auto newThread = ::CreateThread(nullptr, 0, &GameAi::WorkerThreadStatic, this, 0, &threadId);
+
+	::WaitForSingleObject(newThread, INFINITE);
+
+	return m_bestMove;
+}
+
+DWORD WINAPI GameAi::WorkerThread()
+{
+	auto move = DecideMoveImpl(*m_board);
+	m_bestMove = move;
+	return 0;
+}
+
+ChessMove GameAi::DecideMoveImpl(const BoardState& board)
+{
 	const auto& moves = board.ValidMoves();
 	std::vector<int> scores;
 
@@ -46,7 +67,7 @@ ChessMove GameAi::DecideMove(const BoardState& board)
 		const int score = GetBoardScore(temp);
 		if (score > max) max = score;
 		if (score < min) min = score;
-		
+
 		scores.push_back(score);
 	}
 
@@ -70,4 +91,11 @@ ChessMove GameAi::DecideMove(const BoardState& board)
 
 	throw "We shouldn't get here";
 	return moves[0];
+}
+
+DWORD WINAPI GameAi::WorkerThreadStatic(_In_  LPVOID lpParameter)
+{
+	auto pThis = reinterpret_cast<GameAi*>(lpParameter);
+	return pThis->WorkerThread();
+
 }

@@ -2,6 +2,7 @@
 #include "BoardState.h"
 
 extern const BoardLocation InvalidBoardLocation(64);
+extern const ChessMove InvalidChessMove({ InvalidBoardLocation, InvalidBoardLocation });
 
 BoardState::BoardState(const char* board, SideType nextMove)
 	: m_nextMoveSide(nextMove)

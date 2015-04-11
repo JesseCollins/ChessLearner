@@ -169,6 +169,8 @@ SideType OtherSide(SideType side);
 class ChessMove
 {
 public:
+	bool IsValid() { return From != InvalidBoardLocation; }
+
 	// A move is represented with a "from" and "to" location,
 	// castling is represented by moving the king 2 squares either
 	// left or right.
@@ -176,6 +178,8 @@ public:
 	BoardLocation To;
 	PieceType PromotionPiece; // not always needed!
 };
+
+extern const ChessMove InvalidChessMove;
 
 class BoardState
 {
