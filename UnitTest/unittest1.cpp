@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
-#include "..\ChessGame\BoardState.h"
+#include "BoardState.h"
 #include <string>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
