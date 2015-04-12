@@ -34,7 +34,7 @@ private:
 	ChessMove m_bestMove;
 	const BoardState* m_board;
 
-	ChessMove DecideMoveImpl(const BoardState& board);
+	ChessMove DecideMoveImpl(const BoardState& board, int depth, int* scoreAfterMove);
 	static DWORD WINAPI WorkerThreadStatic(_In_  LPVOID lpParameter);
 	DWORD WINAPI WorkerThread();
 };

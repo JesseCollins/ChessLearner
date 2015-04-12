@@ -21,13 +21,13 @@ int GameAi::GetBoardScore(const BoardState& board)
 
 	const static int scores[] = { 0, 1, 3, 3, 5, 9, 100 };
 	const static int multiplier[] = { 1, -1 };	
+
 	for (auto it : board)
 	{
 		auto p = board.Get(it);		
 		const int score = scores[static_cast<int>(p.Type)] * multiplier[static_cast<int>(p.Side)];
 		total += score;
 	}
-
 
 	return total;
 }
@@ -47,13 +47,13 @@ void GameAi::StartDecideMove(const BoardState& board)
 
 DWORD WINAPI GameAi::WorkerThread()
 {
-	auto move = DecideMoveImpl(*m_board);
+	auto move = DecideMoveImpl(*m_board, 0, nullptr);
 	m_bestMove = move;
 	m_elapsedTime = ::GetTickCount() - m_startTime;
 	return 0;
 }
 
-ChessMove GameAi::DecideMoveImpl(const BoardState& board)
+ChessMove GameAi::DecideMoveImpl(const BoardState& board, int depth, int* scoreAfterMove)
 {
 	const auto& moves = board.ValidMoves();
 	std::vector<int> scores;
@@ -65,7 +65,17 @@ ChessMove GameAi::DecideMoveImpl(const BoardState& board)
 	{
 		auto temp = board;
 		temp.Move(m.From, m.To);
-		const int score = GetBoardScore(temp);
+		int score = 0;
+
+		if (depth == 0)
+		{
+			score = GetBoardScore(temp);
+		}
+		else
+		{
+			DecideMoveImpl(board, depth - 1, &score);
+		}
+
 		if (score > max) max = score;
 		if (score < min) min = score;
 
@@ -84,6 +94,7 @@ ChessMove GameAi::DecideMoveImpl(const BoardState& board)
 		{
 			if (choice == 0)
 			{
+				if (scoreAfterMove) *scoreAfterMove = best;
 				return moves[i];
 			}
 			choice--;

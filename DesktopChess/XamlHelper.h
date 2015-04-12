@@ -13,3 +13,10 @@ Platform::String^ MakeString(wchar_t* format, ...)
 
 	return ref new Platform::String(buffer);
 }
+
+Windows::Foundation::TimeSpan MakeTimeSpan(int milliseconds)
+{
+	auto ts = Windows::Foundation::TimeSpan();
+	ts.Duration = milliseconds * 10 * 1000;
+	return ts;
+}

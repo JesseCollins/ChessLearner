@@ -257,10 +257,7 @@ void DesktopChess::MainPage::Button_Click(Platform::Object^ sender, Windows::UI:
 
 	m_aiTimer = ref new DispatcherTimer();
 
-	auto ts = Windows::Foundation::TimeSpan();
-	ts.Duration = 100 * 1000 * 10;
-
-	m_aiTimer->Interval = ts;
+	m_aiTimer->Interval = MakeTimeSpan(100);
 	m_aiTimer->Tick += ref new Windows::Foundation::EventHandler<Platform::Object ^>(this, &DesktopChess::MainPage::OnTick);
 	m_aiTimer->Start();
 }
