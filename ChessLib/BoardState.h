@@ -99,6 +99,8 @@ struct Piece
 class BoardLocation
 {
 public:
+	BoardLocation() : m_sq(64) {}
+
 	BoardLocation(int x, int y)
 	{
 		Init(x, y);
@@ -114,6 +116,12 @@ public:
 	BoardLocation(const BoardLocation& other)
 	{
 		m_sq = other.m_sq;
+	}
+
+	BoardLocation operator=(const BoardLocation& other)
+	{
+		m_sq = other.m_sq;
+		return *this;
 	}
 
 	BoardLocation(byte raw)
@@ -213,6 +221,8 @@ public:
 			Set({ 6, row }, Piece{ PieceType::Knight, side });
 			Set({ 7, row }, Piece{ PieceType::Rook, side });
 		}
+
+		InitializeKingPositions();
 	}
 
 	BoardState(const char* board, SideType nextMove);	
@@ -301,21 +311,8 @@ public:
 
 	bool MovePgn(const char* pgn);
 
-	bool CanTakeKing() const
-	{
-		for (auto from : *this)
-		{
-			for (auto to : *this)
-			{
-				if (Get(to).Type == PieceType::King && CanMove(from, to))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
+	bool CanTakeKing() const;
+	
 	bool IsCheck() const
 	{
 		// This is check if the opponent could take the king if she had another free move
@@ -413,64 +410,7 @@ public:
 
 protected:
 
-	bool MoveImpl(BoardLocation from, BoardLocation to, MoveCallback callback=nullptr)
-	{
-		auto movingPiece = Get(from);
-
-		if (Get(from).Type == PieceType::King)
-		{
-			if (from.X() + 2 == to.X())
-			{
-				MovePiece(BoardLocation(7, from.Y()), BoardLocation(5, from.Y()), callback);
-			}
-			if (from.X() - 2 == to.X())
-			{
-				MovePiece(BoardLocation(0, from.Y()), BoardLocation(3, from.Y()), callback);
-			}
-		}
-
-		if (Get(from).Type == PieceType::Pawn
-			&& from.X() != to.X()
-			&& Get(to).Type == PieceType::Empty)
-		{
-			// en passant -- remove the victim
-			auto victimLoc = BoardLocation(m_enPassantCol, from.Y());
-			MovePiece(victimLoc, InvalidBoardLocation, callback);
-		}
-
-		MovePiece(from, to, callback);
-
-		// Update state
-
-		if (movingPiece.Type == PieceType::Pawn && abs(from.Y() - to.Y()) == 2)
-		{
-			m_enPassantCol = from.X();
-		}
-		else
-		{
-			m_enPassantCol = -1;
-		}
-
-		if (movingPiece.Type == PieceType::King)
-		{
-			const int sideOffset = static_cast<int>(m_nextMoveSide)* 3;
-			m_hasPieceMoved.set(sideOffset);
-		}
-
-		if (movingPiece.Type == PieceType::Rook && from.Y() == GetHomeRow(m_nextMoveSide))
-		{
-			if (from.X() == 0 || from.X() == 7)
-			{
-				// Rook moving from starting pos, make sure to remember it moved
-				const int sideOffset = static_cast<int>(m_nextMoveSide)* 3;
-				m_hasPieceMoved.set(sideOffset + 1 + (from.X() / 7));
-			}
-		}
-
-		this->m_nextMoveSide = m_nextMoveSide == SideType::White ? SideType::Black : SideType::White;
-
-		return true;
-	}
+	bool MoveImpl(BoardLocation from, BoardLocation to, MoveCallback callback = nullptr);
 
 	void MovePiece(BoardLocation from, BoardLocation to, MoveCallback callback)
 	{
@@ -506,6 +446,8 @@ protected:
 		assert(Get(loc) == p);
 	}
 
+	void InitializeKingPositions();
+
 	// We can fit the board into 32 bytes, each square takes a nibble
 	unsigned char m_board[32];
 
@@ -520,7 +462,8 @@ protected:
 	
 
 	SideType m_nextMoveSide : 1;
-	int m_enPassantCol;
+	byte m_enPassantCol;
+	BoardLocation m_kingPosition[2];
 };
 
 

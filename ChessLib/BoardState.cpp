@@ -17,9 +17,24 @@ BoardState::BoardState(const char* board, SideType nextMove)
 			board++;
 		}		
 	}
-
+	InitializeKingPositions();
 }
 
+void BoardState::InitializeKingPositions()
+{
+	for (int y = 0; y < 8; ++y)
+	{
+		for (int x = 0; x < 8; ++x)
+		{
+			auto loc = BoardLocation(x, y);
+			auto p = Get(loc);
+			if (p.Type == PieceType::King)
+			{
+				m_kingPosition[static_cast<int>(p.Side)] = loc;
+			}
+		}
+	}
+}
 
 
 
@@ -250,6 +265,95 @@ bool BoardState::CanCastle(BoardLocation from, BoardLocation to) const
 	return true;
 }
 
+
+bool BoardState::MoveImpl(BoardLocation from, BoardLocation to, MoveCallback callback)
+{
+	auto movingPiece = Get(from);
+
+	if (Get(from).Type == PieceType::King)
+	{
+		if (from.X() + 2 == to.X())
+		{
+			MovePiece(BoardLocation(7, from.Y()), BoardLocation(5, from.Y()), callback);
+		}
+		if (from.X() - 2 == to.X())
+		{
+			MovePiece(BoardLocation(0, from.Y()), BoardLocation(3, from.Y()), callback);
+		}
+	}
+
+	if (Get(from).Type == PieceType::Pawn
+		&& from.X() != to.X()
+		&& Get(to).Type == PieceType::Empty)
+	{
+		// en passant -- remove the victim
+		auto victimLoc = BoardLocation(m_enPassantCol, from.Y());
+		MovePiece(victimLoc, InvalidBoardLocation, callback);
+	}
+
+	MovePiece(from, to, callback);
+
+	// Update state
+
+	if (movingPiece.Type == PieceType::Pawn && abs(from.Y() - to.Y()) == 2)
+	{
+		m_enPassantCol = from.X();
+	}
+	else
+	{
+		m_enPassantCol = -1;
+	}
+
+	if (movingPiece.Type == PieceType::King)
+	{
+		const int sideOffset = static_cast<int>(m_nextMoveSide)* 3;
+		m_hasPieceMoved.set(sideOffset);
+
+		m_kingPosition[static_cast<int>(m_nextMoveSide)] = to;
+	}
+
+	if (movingPiece.Type == PieceType::Rook && from.Y() == GetHomeRow(m_nextMoveSide))
+	{
+		if (from.X() == 0 || from.X() == 7)
+		{
+			// Rook moving from starting pos, make sure to remember it moved
+			const int sideOffset = static_cast<int>(m_nextMoveSide)* 3;
+			m_hasPieceMoved.set(sideOffset + 1 + (from.X() / 7));
+		}
+	}
+
+	this->m_nextMoveSide = m_nextMoveSide == SideType::White ? SideType::Black : SideType::White;
+
+	return true;
+}
+
+bool BoardState::CanTakeKing() const
+{
+	/*
+	for (auto from : *this)
+	{
+		for (auto to : *this)
+		{
+			if (Get(to).Type == PieceType::King && CanMove(from, to))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+	*/
+
+	BoardLocation kingLoc(m_kingPosition[static_cast<int>(OtherSide(m_nextMoveSide))]);
+
+	for (auto from : *this)
+	{
+		if (CanMove(from, kingLoc))
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 SideType OtherSide(SideType side)
 {

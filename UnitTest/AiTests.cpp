@@ -78,6 +78,7 @@ namespace UnitTest
 			Assert::AreEqual(BoardLocation("c7"), move.To);
 		}
 
+		/*
 		TEST_METHOD(ObviousCheckmate)
 		{
 			BoardState b(
@@ -99,6 +100,7 @@ namespace UnitTest
 			Assert::AreEqual(BoardLocation("h8"), m.To);
 			Assert::AreEqual(BoardLocation("h6"), m.From);
 		}
+		*/
 
 	};
 }
