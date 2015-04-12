@@ -2,13 +2,17 @@
 #include "GameAi.h"
 #include <algorithm>
 #include <Windows.h>
+#include <random>
+
+std::default_random_engine g_randomGenerator;
 
 GameAi::GameAi()
 	: m_bestMove(InvalidChessMove)
 	, m_startTime(0)
 	, m_finishedEvent(INVALID_HANDLE_VALUE)
 {
-	::srand(::GetTickCount());
+	//g_randomGenerator.seed(::GetTickCount());
+	g_randomGenerator.seed(0);
 }
 
 
@@ -21,7 +25,7 @@ int GameAi::GetBoardScore(const BoardState& board)
 {
 	int total = 0;
 
-	const static int scores[] = { 0, 1, 3, 3, 5, 9, 100 };
+	const static int scores[] = { 0, 1000, 3000, 3000, 5000, 9000, 100000 };
 	const static int multiplier[] = { 1, -1 };	
 
 	if (board.IsCheckmate())
@@ -104,7 +108,8 @@ ChessMove GameAi::DecideMoveImpl(const BoardState& board, int depth, int* scoreA
 
 	int count = std::count(scores.begin(), scores.end(), best);
 
-	int choice = rand() % count;
+	std::uniform_int_distribution<int> distribution(0, count-1);
+	int choice = distribution(g_randomGenerator);
 
 	for (unsigned i = 0; i < scores.size(); ++i)
 	{
