@@ -6,6 +6,7 @@
 #include "pch.h"
 #include "MainPage.xaml.h"
 #include "GameAi.h"
+#include "XamlHelper.h"
 
 using namespace DesktopChess;
 
@@ -257,7 +258,7 @@ void DesktopChess::MainPage::Button_Click(Platform::Object^ sender, Windows::UI:
 	m_aiTimer = ref new DispatcherTimer();
 
 	auto ts = Windows::Foundation::TimeSpan();
-	ts.Duration = 500 * 1000 * 10;
+	ts.Duration = 100 * 1000 * 10;
 
 	m_aiTimer->Interval = ts;
 	m_aiTimer->Tick += ref new Windows::Foundation::EventHandler<Platform::Object ^>(this, &DesktopChess::MainPage::OnTick);
@@ -269,8 +270,11 @@ void DesktopChess::MainPage::OnTick(Platform::Object ^sender, Platform::Object ^
 {
 	if (m_gameAi->IsFinished())
 	{
-		MakeMove(m_gameAi->GetMove());
+		
+		this->MoveInfoText->Text = MakeString(L"Time: %0.3f", m_gameAi->GetElapsedTime() / 1000.);
 
+		MakeMove(m_gameAi->GetMove());
+		
 		m_gameAi = nullptr;
 		m_aiTimer->Stop();
 		m_aiTimer = nullptr;

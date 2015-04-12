@@ -5,6 +5,7 @@
 
 GameAi::GameAi()
 	: m_bestMove(InvalidChessMove)
+	, m_startTime(0)
 {
 	::srand(::GetTickCount());
 }
@@ -36,6 +37,8 @@ void GameAi::StartDecideMove(const BoardState& board)
 {
 	DWORD threadId;
 
+	m_startTime = ::GetTickCount();
+
 	m_board = &board;
 
 	auto newThread = ::CreateThread(nullptr, 0, &GameAi::WorkerThreadStatic, this, 0, &threadId);
@@ -46,6 +49,7 @@ DWORD WINAPI GameAi::WorkerThread()
 {
 	auto move = DecideMoveImpl(*m_board);
 	m_bestMove = move;
+	m_elapsedTime = ::GetTickCount() - m_startTime;
 	return 0;
 }
 

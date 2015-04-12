@@ -23,7 +23,14 @@ public:
 		return m_bestMove;
 	}
 
+	DWORD GetElapsedTime() const
+	{
+		return m_elapsedTime;
+	}
+
 private:
+	DWORD m_startTime;
+	DWORD m_elapsedTime;
 	ChessMove m_bestMove;
 	const BoardState* m_board;
 

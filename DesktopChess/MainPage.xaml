@@ -32,6 +32,7 @@
         </Grid>
             <StackPanel>
                 <Button Click="Button_Click">Automove!</Button>
+                <TextBlock x:Name="MoveInfoText"></TextBlock>
             </StackPanel>
         </StackPanel>
     </Grid>

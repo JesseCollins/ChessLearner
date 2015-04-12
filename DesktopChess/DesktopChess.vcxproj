@@ -159,6 +159,7 @@
     <ClInclude Include="StartPage.xaml.h">
       <DependentUpon>StartPage.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="XamlHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">

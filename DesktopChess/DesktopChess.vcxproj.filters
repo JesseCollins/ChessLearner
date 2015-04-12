@@ -35,6 +35,7 @@
     <ClInclude Include="App.xaml.h" />
     <ClInclude Include="MainPage.xaml.h" />
     <ClInclude Include="StartPage.xaml.h" />
+    <ClInclude Include="XamlHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
