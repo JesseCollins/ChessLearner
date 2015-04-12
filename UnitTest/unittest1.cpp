@@ -19,12 +19,12 @@ std::basic_string<wchar_t> ToString(PieceType p)
 	switch (p)
 	{
 		DEFINE_ENUM(Empty)
-		DEFINE_ENUM(Pawn)
-		DEFINE_ENUM(Bishop)
-		DEFINE_ENUM(Knight)
-		DEFINE_ENUM(Rook)
-		DEFINE_ENUM(Queen)
-		DEFINE_ENUM(King)
+			DEFINE_ENUM(Pawn)
+			DEFINE_ENUM(Bishop)
+			DEFINE_ENUM(Knight)
+			DEFINE_ENUM(Rook)
+			DEFINE_ENUM(Queen)
+			DEFINE_ENUM(King)
 	}
 #undef DEFINE_ENUM
 	return L"Unknown";
@@ -33,6 +33,15 @@ std::basic_string<wchar_t> ToString(PieceType p)
 std::basic_string<wchar_t> ToString(const Piece& p)
 {
 	return ToString(p.Side) + L" " + ToString(p.Type);
+}
+
+std::basic_string<wchar_t> ToString(const BoardLocation& loc)
+{
+	wchar_t buf[3];
+	buf[0] = loc.X() + L'a';
+	buf[1] = (7 - loc.Y()) + L'1';
+	buf[2] = L'\0';
+	return std::basic_string<wchar_t>(buf);
 }
 
 

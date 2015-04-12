@@ -6,6 +6,7 @@
 GameAi::GameAi()
 	: m_bestMove(InvalidChessMove)
 	, m_startTime(0)
+	, m_finishedEvent(INVALID_HANDLE_VALUE)
 {
 	::srand(::GetTickCount());
 }
@@ -13,6 +14,7 @@ GameAi::GameAi()
 
 GameAi::~GameAi()
 {
+	::CloseHandle(m_finishedEvent);
 }
 
 int GameAi::GetBoardScore(const BoardState& board)
@@ -21,6 +23,11 @@ int GameAi::GetBoardScore(const BoardState& board)
 
 	const static int scores[] = { 0, 1, 3, 3, 5, 9, 100 };
 	const static int multiplier[] = { 1, -1 };	
+
+	if (board.IsCheckmate())
+	{
+		return 1000000000 * multiplier[static_cast<int>(OtherSide(board.NextSide()))];
+	}
 
 	for (auto it : board)
 	{
@@ -41,21 +48,29 @@ void GameAi::StartDecideMove(const BoardState& board)
 
 	m_board = &board;
 
+	m_finishedEvent = ::CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
 	auto newThread = ::CreateThread(nullptr, 0, &GameAi::WorkerThreadStatic, this, 0, &threadId);
 	::CloseHandle(newThread);
 }
 
 DWORD WINAPI GameAi::WorkerThread()
 {
-	auto move = DecideMoveImpl(*m_board, 0, nullptr);
+	auto move = DecideMoveImpl(*m_board, 2, nullptr);
 	m_bestMove = move;
 	m_elapsedTime = ::GetTickCount() - m_startTime;
+	SetEvent(m_finishedEvent);
 	return 0;
 }
 
 ChessMove GameAi::DecideMoveImpl(const BoardState& board, int depth, int* scoreAfterMove)
 {
 	const auto& moves = board.ValidMoves();
+	if (moves.size() == 0)
+	{
+		return InvalidChessMove;
+	}
+
 	std::vector<int> scores;
 
 	int max = -2000000000;
@@ -73,7 +88,10 @@ ChessMove GameAi::DecideMoveImpl(const BoardState& board, int depth, int* scoreA
 		}
 		else
 		{
-			DecideMoveImpl(board, depth - 1, &score);
+			if (!DecideMoveImpl(temp, depth - 1, &score).IsValid())
+			{
+				score = GetBoardScore(temp);
+			}
 		}
 
 		if (score > max) max = score;
