@@ -5,6 +5,8 @@
 *.obj
 *.pdb
 *.suo
+*.vspx
+*.psess
 
 /ChessGame/Debug/*
 /ChessGame/Release/*
