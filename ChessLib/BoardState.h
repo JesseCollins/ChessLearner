@@ -302,13 +302,6 @@ public:
 		return MoveImpl(from, to, callback);
 	}
 
-	BoardState Move2(BoardLocation from, BoardLocation to, bool force=false) const
-	{
-		BoardState newState(*this);
-		newState.Move(from, to, force);
-		return newState;
-	}
-
 	bool MovePgn(const char* pgn);
 
 	bool CanTakeKing() const;
@@ -327,17 +320,13 @@ public:
 
 	bool IsCheckmate() const
 	{
-		// Checkmate: for every possible move, next move can take king!
-		for (auto from : *this)
+		if (!IsCheck()) return false;
+
+		for (auto m : ValidMoves())
 		{
-			for (auto to : *this)
-			{
-				if (CanMove(from, to))
-				{
-					auto newBoard = Move2(from, to);
-					if (!newBoard.CanTakeKing()) return false;
-				}
-			}
+			auto next = *this;
+			next.Move(m.From, m.To);
+			if (!next.CanTakeKing()) return false;
 		}
 		return true;
 	}

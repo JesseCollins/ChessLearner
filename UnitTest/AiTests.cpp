@@ -78,7 +78,8 @@ namespace UnitTest
 			Assert::AreEqual(BoardLocation("c7"), move.To);
 		}
 
-		/*
+		
+		
 		TEST_METHOD(ObviousCheckmate)
 		{
 			BoardState b(
@@ -93,14 +94,18 @@ namespace UnitTest
 				, SideType::White);
 
 			GameAi ai;
-			ai.StartDecideMove(b);
-			ai.WaitUntilFinished();
+			int score;
+			//ai.StartDecideMove(b);
+			//ai.WaitUntilFinished();
 
-			auto m = ai.GetMove();
+			//auto m = ai.GetMove();
+			auto m = ai.DecideMoveImpl(b, 2, &score);
+
+			Assert::IsTrue(score > 100000);
 			Assert::AreEqual(BoardLocation("h8"), m.To);
 			Assert::AreEqual(BoardLocation("h6"), m.From);
 		}
-		*/
+		
 
 	};
 }

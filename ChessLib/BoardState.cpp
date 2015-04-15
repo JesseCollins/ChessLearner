@@ -88,11 +88,15 @@ BoardState::MoveCollection BoardState::ValidMoves() const
 
 	for (auto from : *this)
 	{
-		for (auto to : *this)
+		auto fromPiece = Get(from);
+		if (fromPiece.Type != PieceType::Empty && fromPiece.Side == m_nextMoveSide)
 		{
-			if (CanMove(from, to))
+			for (auto to : *this)
 			{
-				collection.push_back({ from, to });
+				if (CanMove(from, to))
+				{
+					collection.push_back({ from, to });
+				}
 			}
 		}
 	}
@@ -205,7 +209,8 @@ bool BoardState::CanMove(BoardLocation from, BoardLocation to) const
 	// If this hypothetical move is taking a king, it's always ideal!
 	if (toPiece.Type != PieceType::King)
 	{
-		auto newState = Move2(from, to, true);
+		auto newState = *this;
+		newState.Move(from, to, true);
 		if (newState.CanTakeKing())
 		{
 			// If move is allowed, king can be taken
@@ -328,21 +333,7 @@ bool BoardState::MoveImpl(BoardLocation from, BoardLocation to, MoveCallback cal
 }
 
 bool BoardState::CanTakeKing() const
-{
-	/*
-	for (auto from : *this)
-	{
-		for (auto to : *this)
-		{
-			if (Get(to).Type == PieceType::King && CanMove(from, to))
-			{
-				return true;
-			}
-		}
-	}
-	return false;
-	*/
-
+{	
 	BoardLocation kingLoc(m_kingPosition[static_cast<int>(OtherSide(m_nextMoveSide))]);
 
 	for (auto from : *this)

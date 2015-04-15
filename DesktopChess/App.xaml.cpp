@@ -50,6 +50,7 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 			 DebugSettings->EnableFrameRateCounter = true;
 		}
 #endif
+	DebugSettings->EnableFrameRateCounter = true;
 
 	auto rootFrame = dynamic_cast<Frame^>(Window::Current->Content);
 
