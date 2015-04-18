@@ -104,9 +104,16 @@ class BoardLocation
 public:
 	BoardLocation() : m_sq(64) {}
 
-	BoardLocation(int x, int y)
+	BoardLocation(int x, int y, bool check=false)
 	{
-		Init(x, y);
+		if (check && (x < 0 || x > 7 || y < 0 || y > 8))
+		{
+			m_sq = 64;
+		}
+		else
+		{
+			Init(x, y);
+		}
 	}
 
 	BoardLocation(const char* str)
@@ -130,6 +137,11 @@ public:
 	BoardLocation(byte raw)
 	{
 		m_sq = raw;
+	}
+
+	bool IsValid() const
+	{
+		return m_sq >= 0 && m_sq < 64;
 	}
 
 	byte Raw() const

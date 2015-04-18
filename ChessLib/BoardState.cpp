@@ -88,19 +88,42 @@ int GetEnPassantRow(SideType side)
 BoardState::MoveCollection BoardState::ValidMoves() const
 {
 	MoveCollection collection;
+	const static int pawnDirection[] = { -1, 1 };
 
 	for (auto from : *this)
 	{
-		auto fromPiece = Get(from);
+		auto fromPiece = Get(from);		
 		if (fromPiece.Type != PieceType::Empty && fromPiece.Side == m_nextMoveSide)
 		{
-			for (auto to : *this)
+			switch (fromPiece.Type)
 			{
-				if (CanMove(from, to))
+			case (int)PieceType::Pawn:
 				{
-					collection.push_back({ from, to });
+					const int dir = pawnDirection[static_cast<int>(m_nextMoveSide)];
+					const int x = from.X();
+					const int y = from.Y();
+					BoardLocation to(x, y + dir, true);
+					if (to.IsValid() && CanMove(from, to)) collection.push_back({ from, to });
+
+					to = BoardLocation(x, y + dir + dir, true);
+					if (to.IsValid() && CanMove(from, to)) collection.push_back({ from, to });
+
+					to = BoardLocation(x - 1, y + dir, true);
+					if (to.IsValid() && CanMove(from, to)) collection.push_back({ from, to });
+
+					to = BoardLocation(x + 1, y + dir, true);
+					if (to.IsValid() && CanMove(from, to)) collection.push_back({ from, to });
+					break;
 				}
-			}
+			default:
+				for (auto to : *this)
+				{
+					if (CanMove(from, to))
+					{
+						collection.push_back({ from, to });
+					}
+				}
+			}						
 		}
 	}
 	return collection;
