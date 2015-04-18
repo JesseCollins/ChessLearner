@@ -23,6 +23,7 @@ GameAi::~GameAi()
 
 int GameAi::GetBoardScore(const BoardState& board)
 {
+	++g_boardScoreCalls;
 	int total = 0;
 
 	const static int scores[] = { 0, 1000, 3000, 3000, 5000, 9000, 100000 };

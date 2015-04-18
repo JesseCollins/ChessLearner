@@ -4,6 +4,9 @@
 extern const BoardLocation InvalidBoardLocation(64);
 extern const ChessMove InvalidChessMove({ InvalidBoardLocation, InvalidBoardLocation });
 
+extern int g_canMoveCalls = 0;
+extern int g_boardScoreCalls = 0;
+
 BoardState::BoardState(const char* board, SideType nextMove)
 	: m_nextMoveSide(nextMove)
 	, m_enPassantCol(-1)
@@ -106,6 +109,8 @@ BoardState::MoveCollection BoardState::ValidMoves() const
 
 bool BoardState::CanMove(BoardLocation from, BoardLocation to) const
 {
+	++g_canMoveCalls;
+
 	auto fromPiece = Get(from);
 	auto toPiece = Get(to);
 

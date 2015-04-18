@@ -12,13 +12,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	DWORD start = ::GetTickCount();
 
-	//for (int i = 0; i < 1; ++i)
-	{
-		auto m = ai.DecideMoveImpl(b, 3, nullptr);
-		//b.Move(m.From, m.To, nullptr);
-	}
-	DWORD total = ::GetTickCount() - start;
+	ai.DecideMoveImpl(b, 3, nullptr);
 
+	DWORD total = ::GetTickCount() - start;
+	wprintf(L"scores:%d canmove:%d\n", g_boardScoreCalls, g_canMoveCalls);
 	wprintf(L"Time %f\n", total / 1000.);
 
 	

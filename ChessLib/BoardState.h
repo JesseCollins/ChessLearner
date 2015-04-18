@@ -5,6 +5,9 @@
 #include <vector>
 #include <bitset>
 
+extern int g_canMoveCalls;
+extern int g_boardScoreCalls;
+
 typedef unsigned char byte;
 
 enum class PieceType : byte
@@ -303,7 +306,7 @@ public:
 		return false;
 	}
 
-	bool CanMove(BoardLocation from, BoardLocation to) const;
+	inline bool CanMove(BoardLocation from, BoardLocation to) const;
 	bool CanCastle(BoardLocation from, BoardLocation to) const;
 
 	typedef std::function<void(BoardLocation, BoardLocation)> MoveCallback;
@@ -346,7 +349,7 @@ public:
 		for (auto m : ValidMoves())
 		{
 			auto next = *this;
-			next.Move(m.From, m.To);
+			next.Move(m.From, m.To, true);
 			if (!next.CanTakeKing()) return false;
 		}
 		return true;
