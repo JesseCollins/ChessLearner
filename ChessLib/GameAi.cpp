@@ -40,6 +40,9 @@ int GameAi::GetBoardScore(const BoardState& board)
 		total += score;
 	}
 
+	int possibleMoves = board.ValidMoves().size();
+	total += possibleMoves * multiplier[static_cast<int>(board.NextSide())];
+
 	return total;
 }
 

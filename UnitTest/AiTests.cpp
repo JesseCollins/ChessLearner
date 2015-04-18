@@ -99,11 +99,12 @@ namespace UnitTest
 			//ai.WaitUntilFinished();
 
 			//auto m = ai.GetMove();
-			auto m = ai.DecideMoveImpl(b, 2, &score);
+			auto m1 = ai.DecideMoveImpl(b, 0, &score);
+
 
 			Assert::IsTrue(score > 100000);
-			Assert::AreEqual(BoardLocation("h8"), m.To);
-			Assert::AreEqual(BoardLocation("h6"), m.From);
+			Assert::AreEqual(BoardLocation("h8"), m1.To);
+			Assert::AreEqual(BoardLocation("h6"), m1.From);
 		}
 		
 
