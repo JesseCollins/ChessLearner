@@ -7,6 +7,8 @@
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+
+    // Right now just using this to get insight into perf
 	BoardState b;
 	GameAi ai;
 
